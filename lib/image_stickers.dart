@@ -6,15 +6,17 @@ import 'dart:math' as math;
 import 'dart:ui' as UI;
 
 import 'package:flutter/services.dart';
-import 'package:image/image.dart' as IMAGE;
 import 'package:flutter/material.dart';
 
 class ImageStickers extends StatefulWidget {
   final String backgroundImage;
   final List<UISticker> stickerList;
 
+  final double minStickerSize;
+  final double maxStickerSize;
+
   const ImageStickers(
-      {required this.backgroundImage, required this.stickerList, Key? key})
+      {required this.backgroundImage, required this.stickerList, this.minStickerSize = 50.0, this.maxStickerSize  = 200.0, Key? key})
       : super(key: key);
 
   @override
@@ -70,7 +72,7 @@ class ImageStickersState extends State<ImageStickers> {
             ? Container()
             : UIStickerWidget(e, () {
                 setState(() {});
-              }))
+              }, maxStickerSize: widget.maxStickerSize, minStickerSize: widget.minStickerSize,))
         .toList());
     return Stack(
       children: stackWidgets,
@@ -81,9 +83,11 @@ class ImageStickersState extends State<ImageStickers> {
 class UIStickerWidget extends StatefulWidget {
   final UISticker uiSticker;
   final Function updateParent;
+  final double minStickerSize;
+  final double maxStickerSize;
 
   const UIStickerWidget(this.uiSticker, this.updateParent,
-      {Key? key})
+      {required this.minStickerSize, required this.maxStickerSize, Key? key})
       : super(key: key);
 
   @override
@@ -95,25 +99,12 @@ class UIStickerWidget extends StatefulWidget {
 class UIStickerWidgetState extends State<UIStickerWidget> {
   final controlsSize = 30.0;
 
-  double minStickerSize = 50.0;
-  double maxStickerSize = 200.0;
-
   final topOffset = 85.0;
   final bottomOffset = 65.0;
   final sideOffset = 8.0;
 
-  double extraSideOffset = 0.0;
-  double extraTopOffset = 0.0;
-  double realImageHeight = 0.0;
-  double realImageWidth = 0.0;
-
-  bool isCharmConnected = false;
-
   @override
   void initState() {
-    minStickerSize = 50.0;
-    maxStickerSize = 200.0;
-
     super.initState();
   }
 
@@ -212,11 +203,11 @@ class UIStickerWidgetState extends State<UIStickerWidget> {
                                           touchPositionFromCenter.dy.abs()) -
                                       controlsSize) *
                                   2;
-                              if (size < minStickerSize) {
-                                size = minStickerSize;
+                              if (size < widget.minStickerSize) {
+                                size = widget.minStickerSize;
                               }
-                              if (size > maxStickerSize) {
-                                size = maxStickerSize;
+                              if (size > widget.maxStickerSize) {
+                                size = widget.maxStickerSize;
                               }
                               widget.uiSticker.size = size;
                             });
@@ -253,12 +244,8 @@ class DropPainter extends CustomPainter {
       FittedSizes fs = applyBoxFit(BoxFit.contain, inputSize, size);
       Rect src = Offset.zero & fs.source;
       Rect dst = Alignment.center.inscribe(fs.destination, r);
-
       canvas.saveLayer(dst, Paint());
-      //canvas.save();
       canvas.drawImageRect(weaponImage!, src, dst, paint);
-      // paint.blendMode = BlendMode.multiply;
-      //canvas.restore();
       for (var sticker in stickerList) {
         drawSticker(canvas, size, sticker);
       }
@@ -278,7 +265,6 @@ class DropPainter extends CustomPainter {
       stickerPaint.blendMode = BlendMode.srcATop;
       stickerPaint.color = Colors.black.withAlpha(240);
 
-      //debugPrint("canvas ${stickerList.length}");
       Size inputSize = Size(
           sticker.image!.width.toDouble(), sticker.image!.height.toDouble());
 
