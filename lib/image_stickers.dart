@@ -16,7 +16,11 @@ class ImageStickers extends StatefulWidget {
   final double maxStickerSize;
 
   const ImageStickers(
-      {required this.backgroundImage, required this.stickerList, this.minStickerSize = 50.0, this.maxStickerSize  = 200.0, Key? key})
+      {required this.backgroundImage,
+      required this.stickerList,
+      this.minStickerSize = 50.0,
+      this.maxStickerSize = 200.0,
+      Key? key})
       : super(key: key);
 
   @override
@@ -27,6 +31,8 @@ class ImageStickers extends StatefulWidget {
 
 class ImageStickersState extends State<ImageStickers> {
   UI.Image? backgroundImage;
+
+  List<_DrawableSticker> drawableStickers = [];
 
   @override
   void initState() {
@@ -39,69 +45,72 @@ class ImageStickersState extends State<ImageStickers> {
     backgroundImage = await decodeImageFromList(imageBytes.buffer
         .asUint8List(imageBytes.offsetInBytes, imageBytes.lengthInBytes));
 
-    for (UISticker uiSticker in widget.stickerList) {
-      var stickerImageBytes = await rootBundle.load(uiSticker.imagePath);
-      uiSticker.image = await decodeImageFromList(stickerImageBytes.buffer
+    drawableStickers = await Future.wait(widget.stickerList.map((e) async {
+      var stickerImageBytes = await rootBundle.load(e.imagePath);
+      var image = await decodeImageFromList(stickerImageBytes.buffer
           .asUint8List(stickerImageBytes.offsetInBytes,
               stickerImageBytes.lengthInBytes));
-    }
+      return _DrawableSticker(e, false, image);
+    }).toList());
     setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
     ////debugPrint("build $weaponImage");
-    var stackWidgets = <Widget>[];
-    stackWidgets.add(LayoutBuilder(
-      // Inner yellow container
-      builder: (_, constraints) => SizedBox(
-        width: constraints.widthConstraints().maxWidth,
-        height: constraints.heightConstraints().maxHeight,
-        //color: Colors.yellow,
-        child: backgroundImage == null
-            ? Container()
-            : Container(
-                child: CustomPaint(
-                  painter: DropPainter(backgroundImage!, widget.stickerList),
-                ),
-              ),
-      ),
-    ));
-    stackWidgets.addAll(widget.stickerList
-        .map((e) => e.image == null
-            ? Container()
-            : UIStickerWidget(e, () {
+
+    var stickers = drawableStickers
+        .map((sticker) => EditableSticker(
+              sticker: sticker,
+              onStateChanged: (isDragged) {
                 setState(() {});
-              }, maxStickerSize: widget.maxStickerSize, minStickerSize: widget.minStickerSize,))
-        .toList());
+              },
+              maxStickerSize: widget.maxStickerSize,
+              minStickerSize: widget.minStickerSize,
+            ))
+        .toList();
+
     return Stack(
-      children: stackWidgets,
+      children: [
+        LayoutBuilder(
+          builder: (_, constraints) => SizedBox(
+            width: constraints.widthConstraints().maxWidth,
+            height: constraints.heightConstraints().maxHeight,
+            child: backgroundImage == null
+                ? Container()
+                : CustomPaint(
+                    painter: DropPainter(backgroundImage!, drawableStickers),
+                  ),
+          ),
+        ),
+        ...stickers.where((e) => e.sticker.sticker.editable)
+      ],
     );
   }
 }
 
-class UIStickerWidget extends StatefulWidget {
-  final UISticker uiSticker;
-  final Function updateParent;
+class EditableSticker extends StatefulWidget {
+  final _DrawableSticker sticker;
+  final Function(bool isDragged)? onStateChanged;
   final double minStickerSize;
   final double maxStickerSize;
 
-  const UIStickerWidget(this.uiSticker, this.updateParent,
-      {required this.minStickerSize, required this.maxStickerSize, Key? key})
+  const EditableSticker(
+      {required this.sticker,
+      this.onStateChanged,
+      required this.minStickerSize,
+      required this.maxStickerSize,
+      Key? key})
       : super(key: key);
 
   @override
   State<StatefulWidget> createState() {
-    return UIStickerWidgetState();
+    return EditableStickerState();
   }
 }
 
-class UIStickerWidgetState extends State<UIStickerWidget> {
+class EditableStickerState extends State<EditableSticker> {
   final controlsSize = 30.0;
-
-  final topOffset = 85.0;
-  final bottomOffset = 65.0;
-  final sideOffset = 8.0;
 
   @override
   void initState() {
@@ -110,16 +119,16 @@ class UIStickerWidgetState extends State<UIStickerWidget> {
 
   @override
   Widget build(BuildContext context) {
-    double height = widget.uiSticker.size;
-    double width = (widget.uiSticker.size / widget.uiSticker.image!.height) *
-        widget.uiSticker.image!.width;
+    double height = widget.sticker.sticker.size;
+    double width = (widget.sticker.sticker.size / widget.sticker.image.height) *
+        widget.sticker.image.width;
 
     Widget stickerDraggableChild = Transform.rotate(
-        angle: widget.uiSticker.angle,
+        angle: widget.sticker.sticker.angle,
         child: SizedBox(
           width: width,
           height: height,
-          child: Image.asset(widget.uiSticker.imagePath),
+          child: Image.asset(widget.sticker.sticker.imagePath),
         ));
     Widget draggableEmptyWidget = Container(
       width: width,
@@ -127,10 +136,10 @@ class UIStickerWidgetState extends State<UIStickerWidget> {
       decoration: BoxDecoration(
           border: Border.all(color: Colors.grey.withAlpha(150), width: 1)),
     );
-    return widget.uiSticker.editable
+    return widget.sticker.sticker.editable
         ? Positioned(
-            left: widget.uiSticker.x - width / 2 - controlsSize,
-            top: widget.uiSticker.y - height / 2 - controlsSize,
+            left: widget.sticker.sticker.x - width / 2 - controlsSize,
+            top: widget.sticker.sticker.y - height / 2 - controlsSize,
             child: buildStickerControls(
                 child: Draggable(
                   child: draggableEmptyWidget,
@@ -138,17 +147,20 @@ class UIStickerWidgetState extends State<UIStickerWidget> {
                   childWhenDragging: Container(),
                   onDragEnd: (dragDetails) {
                     setState(() {
-                      widget.uiSticker.dragging = false;
-                      widget.uiSticker.x = dragDetails.offset.dx + width / 2;
-                      widget.uiSticker.y = dragDetails.offset.dy + height / 2;
+                      widget.sticker.dragged = false;
+                      widget.sticker.sticker.x =
+                          dragDetails.offset.dx + width / 2;
+                      widget.sticker.sticker.y =
+                          dragDetails.offset.dy + height / 2;
 
-                      widget.updateParent();
+                      widget.onStateChanged?.call(false);
                     });
                   },
                   onDragStarted: () {
                     setState(() {
-                      widget.uiSticker.dragging = true;
-                      widget.updateParent();
+                      widget.sticker.dragged = true;
+                      //todo update in parent in onChanged?
+                      widget.onStateChanged?.call(true);
                     });
                   },
                 ),
@@ -163,14 +175,13 @@ class UIStickerWidgetState extends State<UIStickerWidget> {
     Widget rotateControlWidget = Container(
       width: controlsSize,
       height: controlsSize,
-      decoration: BoxDecoration(color: Colors.blue),
-      /*child: Image(
-          image: ImageUtil.getImageSource('IMAGE_resize.png'),
-        )*/
+      decoration: BoxDecoration(
+          color: Colors.blue,
+          borderRadius: BorderRadius.circular(controlsSize / 2)),
     );
 
     return Transform.rotate(
-        angle: widget.uiSticker.angle,
+        angle: widget.sticker.sticker.angle,
         child: SizedBox(
           width: width + controlsSize * 2,
           height: height + controlsSize * 2,
@@ -180,8 +191,8 @@ class UIStickerWidgetState extends State<UIStickerWidget> {
                 child: child,
               ),
               Visibility(
-                  visible:
-                      !widget.uiSticker.dragging && widget.uiSticker.editable,
+                  visible: !widget.sticker.dragged &&
+                      widget.sticker.sticker.editable,
                   child: Container(
                     alignment: Alignment.bottomRight,
                     child: Stack(
@@ -192,8 +203,9 @@ class UIStickerWidgetState extends State<UIStickerWidget> {
                           behavior: HitTestBehavior.translucent,
                           onPanUpdate: (details) {
                             //rotation of the widget
-                            Offset centerOfGestureDetector =
-                                Offset(widget.uiSticker.x, widget.uiSticker.y);
+                            Offset centerOfGestureDetector = Offset(
+                                widget.sticker.sticker.x,
+                                widget.sticker.sticker.y);
                             final touchPositionFromCenter =
                                 details.globalPosition -
                                     centerOfGestureDetector;
@@ -209,7 +221,10 @@ class UIStickerWidgetState extends State<UIStickerWidget> {
                               if (size > widget.maxStickerSize) {
                                 size = widget.maxStickerSize;
                               }
-                              widget.uiSticker.size = size;
+                              widget.sticker.sticker.size = size;
+                              widget.sticker.sticker.angle =
+                                  touchPositionFromCenter.direction -
+                                      (45 * math.pi / 180);
                             });
                           },
                         )
@@ -224,7 +239,7 @@ class UIStickerWidgetState extends State<UIStickerWidget> {
 
 class DropPainter extends CustomPainter {
   UI.Image? weaponImage;
-  List<UISticker> stickerList;
+  List<_DrawableSticker> stickerList;
 
   final topOffset = 85.0;
   final bottomOffset = 65.0;
@@ -253,37 +268,46 @@ class DropPainter extends CustomPainter {
     }
   }
 
-  void drawSticker(Canvas canvas, Size size, UISticker? sticker) {
-    if (sticker != null && !sticker.dragging) {
+  void drawSticker(Canvas canvas, Size size, _DrawableSticker sticker) {
+    if (!sticker.dragged) {
       canvas.save();
 
-      double height = sticker.size;
+      double height = sticker.sticker.size;
       double width =
-          (sticker.size / sticker.image!.height) * sticker.image!.width;
+          (sticker.sticker.size / sticker.image.height) * sticker.image.width;
 
       Paint stickerPaint = Paint();
       stickerPaint.blendMode = BlendMode.srcATop;
       stickerPaint.color = Colors.black.withAlpha(240);
 
-      Size inputSize = Size(
-          sticker.image!.width.toDouble(), sticker.image!.height.toDouble());
+      Size inputSize =
+          Size(sticker.image.width.toDouble(), sticker.image.height.toDouble());
 
       FittedSizes fs =
           applyBoxFit(BoxFit.contain, inputSize, Size(width, height));
       Rect src = Offset.zero & fs.source;
-      Rect dst = Offset(sticker.x - width / 2, sticker.y - height / 2) &
+      Rect dst = Offset(
+              sticker.sticker.x - width / 2, sticker.sticker.y - height / 2) &
           fs.destination;
 
-      canvas.translate(sticker.x, sticker.y);
-      canvas.rotate(sticker.angle);
-      canvas.translate(-sticker.x, -sticker.y);
-      canvas.drawImageRect(sticker.image!, src, dst, stickerPaint);
+      canvas.translate(sticker.sticker.x, sticker.sticker.y);
+      canvas.rotate(sticker.sticker.angle);
+      canvas.translate(-sticker.sticker.x, -sticker.sticker.y);
+      canvas.drawImageRect(sticker.image, src, dst, stickerPaint);
       canvas.restore();
     }
   }
 
   @override
   bool shouldRepaint(DropPainter oldDelegate) => false;
+}
+
+class _DrawableSticker {
+  UISticker sticker;
+  bool dragged;
+  UI.Image image;
+
+  _DrawableSticker(this.sticker, this.dragged, this.image);
 }
 
 class UISticker {
@@ -293,8 +317,6 @@ class UISticker {
   double size;
   double angle;
 
-  UI.Image? image;
-  bool dragging = false;
   bool editable = false;
 
   UISticker(
