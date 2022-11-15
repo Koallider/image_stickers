@@ -36,7 +36,7 @@ class _MyHomePageState extends State<MyHomePage> {
       body: ImageStickers(
         backgroundImage: "assets/weapon.png",
         stickerList: [
-          UISticker(imagePath: "assets/sticker.png", x: 100, y: 100, editable: true)
+          UISticker(imagePath: "assets/sticker.png", x: 100, y: 100, editable: true, angle: 90)
         ],
       ), // This trailing comma makes auto-formatting nicer for build methods.
     );

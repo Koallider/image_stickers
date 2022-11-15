@@ -1,9 +1,8 @@
 library image_stickers;
 
 import 'dart:core';
-import 'dart:io';
 import 'dart:math' as math;
-import 'dart:ui' as UI;
+import 'dart:ui' as ui;
 
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
@@ -30,7 +29,7 @@ class ImageStickers extends StatefulWidget {
 }
 
 class ImageStickersState extends State<ImageStickers> {
-  UI.Image? backgroundImage;
+  ui.Image? backgroundImage;
 
   List<_DrawableSticker> drawableStickers = [];
 
@@ -57,8 +56,6 @@ class ImageStickersState extends State<ImageStickers> {
 
   @override
   Widget build(BuildContext context) {
-    ////debugPrint("build $weaponImage");
-
     var stickers = drawableStickers
         .map((sticker) => EditableSticker(
               sticker: sticker,
@@ -97,9 +94,9 @@ class EditableSticker extends StatefulWidget {
 
   const EditableSticker(
       {required this.sticker,
-      this.onStateChanged,
       required this.minStickerSize,
       required this.maxStickerSize,
+      this.onStateChanged,
       Key? key})
       : super(key: key);
 
@@ -136,8 +133,7 @@ class EditableStickerState extends State<EditableSticker> {
       decoration: BoxDecoration(
           border: Border.all(color: Colors.grey.withAlpha(150), width: 1)),
     );
-    return widget.sticker.sticker.editable
-        ? Positioned(
+    return Positioned(
             left: widget.sticker.sticker.x - width / 2 - controlsSize,
             top: widget.sticker.sticker.y - height / 2 - controlsSize,
             child: buildStickerControls(
@@ -166,8 +162,7 @@ class EditableStickerState extends State<EditableSticker> {
                 ),
                 width: width,
                 height: height),
-          )
-        : Container();
+          );
   }
 
   Widget buildStickerControls(
@@ -191,8 +186,7 @@ class EditableStickerState extends State<EditableSticker> {
                 child: child,
               ),
               Visibility(
-                  visible: !widget.sticker.dragged &&
-                      widget.sticker.sticker.editable,
+                  visible: !widget.sticker.dragged,
                   child: Container(
                     alignment: Alignment.bottomRight,
                     child: Stack(
@@ -213,14 +207,9 @@ class EditableStickerState extends State<EditableSticker> {
                               var size = (math.max(
                                           touchPositionFromCenter.dx.abs(),
                                           touchPositionFromCenter.dy.abs()) -
-                                      controlsSize) *
-                                  2;
-                              if (size < widget.minStickerSize) {
-                                size = widget.minStickerSize;
-                              }
-                              if (size > widget.maxStickerSize) {
-                                size = widget.maxStickerSize;
-                              }
+                                      controlsSize) * 2;
+                              size = size.clamp(
+                                  widget.minStickerSize, widget.maxStickerSize);
                               widget.sticker.sticker.size = size;
                               widget.sticker.sticker.angle =
                                   touchPositionFromCenter.direction -
@@ -238,7 +227,7 @@ class EditableStickerState extends State<EditableSticker> {
 }
 
 class DropPainter extends CustomPainter {
-  UI.Image? weaponImage;
+  ui.Image? weaponImage;
   List<_DrawableSticker> stickerList;
 
   final topOffset = 85.0;
@@ -305,7 +294,7 @@ class DropPainter extends CustomPainter {
 class _DrawableSticker {
   UISticker sticker;
   bool dragged;
-  UI.Image image;
+  ui.Image image;
 
   _DrawableSticker(this.sticker, this.dragged, this.image);
 }
