@@ -34,9 +34,9 @@ class _MyHomePageState extends State<MyHomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: ImageStickers(
-        backgroundImage: "assets/weapon.png",
+        backgroundImage: const AssetImage("assets/weapon.png"),
         stickerList: [
-          UISticker(imagePath: "assets/sticker.png", x: 100, y: 100, editable: true, angle: 90)
+          UISticker(imageProvider: const AssetImage("assets/sticker.png"), x: 100, y: 100, editable: true, angle: 0)
         ],
       ), // This trailing comma makes auto-formatting nicer for build methods.
     );
