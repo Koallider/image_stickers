@@ -18,12 +18,12 @@ class UISticker {
 
   UISticker(
       {required this.imageProvider,
-        required this.x,
-        required this.y,
-        this.size = 100,
-        this.angle = 0.0,
-        this.blendMode = BlendMode.srcATop,
-        this.editable = false});
+      required this.x,
+      required this.y,
+      this.size = 100,
+      this.angle = 0.0,
+      this.blendMode = BlendMode.srcATop,
+      this.editable = false});
 }
 
 class ImageStickers extends StatefulWidget {
@@ -60,7 +60,8 @@ class _ImageStickersState extends State<ImageStickers> {
 
   void loadImages() async {
     var imageStream = widget.backgroundImage.resolve(ImageConfiguration.empty);
-    imageStream.addListener(ImageStreamListener((ImageInfo image, bool synchronousCall) {
+    imageStream.addListener(
+        ImageStreamListener((ImageInfo image, bool synchronousCall) {
       setState(() {
         backgroundImage = image.image;
       });

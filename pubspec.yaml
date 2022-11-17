@@ -1,6 +1,6 @@
 name: image_stickers
-description: Plugin to apply stickers to base image
-version: 0.0.1-SNAPSHOT
+description: Plugin to apply image stickers to the background image. Drag, resize, rotate stickers.
+version: 0.0.1
 homepage: https://github.com/Koallider/image_stickers
 
 environment:
@@ -10,7 +10,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  image: 3.0.8
+  image: ^3.1.0
 
 dev_dependencies:
   flutter_test:
