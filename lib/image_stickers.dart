@@ -4,8 +4,27 @@ import 'dart:core';
 import 'dart:math' as math;
 import 'dart:ui' as ui;
 
-import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
+
+class UISticker {
+  ImageProvider imageProvider;
+  double x;
+  double y;
+  double size;
+  double angle;
+  BlendMode blendMode;
+
+  bool editable = false;
+
+  UISticker(
+      {required this.imageProvider,
+        required this.x,
+        required this.y,
+        this.size = 100,
+        this.angle = 0.0,
+        this.blendMode = BlendMode.srcATop,
+        this.editable = false});
+}
 
 class ImageStickers extends StatefulWidget {
   final ImageProvider backgroundImage;
@@ -24,11 +43,11 @@ class ImageStickers extends StatefulWidget {
 
   @override
   State<StatefulWidget> createState() {
-    return ImageStickersState();
+    return _ImageStickersState();
   }
 }
 
-class ImageStickersState extends State<ImageStickers> {
+class _ImageStickersState extends State<ImageStickers> {
   ui.Image? backgroundImage;
 
   List<_DrawableSticker> drawableStickers = [];
@@ -61,7 +80,7 @@ class ImageStickersState extends State<ImageStickers> {
   @override
   Widget build(BuildContext context) {
     var stickers = drawableStickers
-        .map((sticker) => EditableSticker(
+        .map((sticker) => _EditableSticker(
               sticker: sticker,
               onStateChanged: (isDragged) {
                 setState(() {});
@@ -80,7 +99,7 @@ class ImageStickersState extends State<ImageStickers> {
             child: backgroundImage == null
                 ? Container()
                 : CustomPaint(
-                    painter: DropPainter(backgroundImage!, drawableStickers),
+                    painter: _DropPainter(backgroundImage!, drawableStickers),
                   ),
           ),
         ),
@@ -90,13 +109,13 @@ class ImageStickersState extends State<ImageStickers> {
   }
 }
 
-class EditableSticker extends StatefulWidget {
+class _EditableSticker extends StatefulWidget {
   final _DrawableSticker sticker;
   final Function(bool isDragged)? onStateChanged;
   final double minStickerSize;
   final double maxStickerSize;
 
-  const EditableSticker(
+  const _EditableSticker(
       {required this.sticker,
       required this.minStickerSize,
       required this.maxStickerSize,
@@ -106,11 +125,11 @@ class EditableSticker extends StatefulWidget {
 
   @override
   State<StatefulWidget> createState() {
-    return EditableStickerState();
+    return _EditableStickerState();
   }
 }
 
-class EditableStickerState extends State<EditableSticker> {
+class _EditableStickerState extends State<_EditableSticker> {
   final controlsSize = 30.0;
 
   @override
@@ -225,11 +244,11 @@ class EditableStickerState extends State<EditableSticker> {
   }
 }
 
-class DropPainter extends CustomPainter {
+class _DropPainter extends CustomPainter {
   ui.Image? weaponImage;
   List<_DrawableSticker> stickerList;
 
-  DropPainter(this.weaponImage, this.stickerList);
+  _DropPainter(this.weaponImage, this.stickerList);
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -260,7 +279,7 @@ class DropPainter extends CustomPainter {
           (sticker.sticker.size / sticker.image.height) * sticker.image.width;
 
       Paint stickerPaint = Paint();
-      stickerPaint.blendMode = BlendMode.srcATop;
+      stickerPaint.blendMode = sticker.sticker.blendMode;
       stickerPaint.color = Colors.black.withAlpha(240);
 
       Size inputSize =
@@ -282,7 +301,7 @@ class DropPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(DropPainter oldDelegate) => false;
+  bool shouldRepaint(_DropPainter oldDelegate) => false;
 }
 
 class _DrawableSticker {
@@ -291,22 +310,4 @@ class _DrawableSticker {
   ui.Image image;
 
   _DrawableSticker(this.sticker, this.dragged, this.image);
-}
-
-class UISticker {
-  ImageProvider imageProvider;
-  double x;
-  double y;
-  double size;
-  double angle;
-
-  bool editable = false;
-
-  UISticker(
-      {required this.imageProvider,
-      required this.x,
-      required this.y,
-      this.size = 100,
-      this.angle = 0.0,
-      this.editable = false});
 }

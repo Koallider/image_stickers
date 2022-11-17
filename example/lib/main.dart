@@ -29,14 +29,17 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: ImageStickers(
         backgroundImage: const AssetImage("assets/weapon.png"),
         stickerList: [
-          UISticker(imageProvider: const AssetImage("assets/sticker.png"), x: 100, y: 100, editable: true, angle: 0)
+          UISticker(
+              imageProvider: const AssetImage("assets/sticker.png"),
+              x: 100,
+              y: 100,
+              editable: true)
         ],
       ), // This trailing comma makes auto-formatting nicer for build methods.
     );
