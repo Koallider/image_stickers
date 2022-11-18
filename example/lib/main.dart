@@ -29,17 +29,36 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+
+  List<UISticker> stickers = [];
+
+  @override
+  void initState() {
+    stickers.add(createSticker(0));
+  }
+
+  UISticker createSticker(int index){
+    return UISticker(
+        imageProvider: const AssetImage("assets/sticker.png"),
+        x: 100 + 100.0 * index,
+        y: 360,
+        editable: true);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: ImageStickers(
-        backgroundImage: const AssetImage("assets/weapon.png"),
-        stickerList: [
-          UISticker(
-              imageProvider: const AssetImage("assets/sticker.png"),
-              x: 100,
-              y: 100,
-              editable: true)
+      body: Stack(
+        children: [
+          ImageStickers(
+            backgroundImage: const AssetImage("assets/weapon.png"),
+            stickerList: stickers,
+          ),
+          TextButton(onPressed: (){
+            setState(() {
+              stickers.add(createSticker(stickers.length));
+            });
+          }, child: Text("Create sticker"))
         ],
       ), // This trailing comma makes auto-formatting nicer for build methods.
     );

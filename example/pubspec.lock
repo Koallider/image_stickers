@@ -101,7 +101,7 @@ packages:
       name: image
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "3.0.8"
+    version: "3.1.3"
   image_stickers:
     dependency: "direct main"
     description:
