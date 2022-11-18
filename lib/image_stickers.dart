@@ -48,39 +48,99 @@ class ImageStickers extends StatefulWidget {
 }
 
 class _ImageStickersState extends State<ImageStickers> {
-  ui.Image? backgroundImage;
+  ImageStream? _backgroundImageStream;
+  ImageInfo? _backgroundImageInfo;
 
-  List<_DrawableSticker> drawableStickers = [];
+  Map<UISticker, _DrawableSticker> stickerMap = {};
 
   @override
   void initState() {
     super.initState();
-    loadImages();
+    _getBackgroundImage();
+    _getImages(widget.stickerList);
   }
 
-  void loadImages() async {
-    var imageStream = widget.backgroundImage.resolve(ImageConfiguration.empty);
-    imageStream.addListener(
-        ImageStreamListener((ImageInfo image, bool synchronousCall) {
-      setState(() {
-        backgroundImage = image.image;
-      });
-    }));
+  void _getImages(List<UISticker> stickerList) async {
+    var oldStickers = stickerMap;
+    stickerMap = {};
 
-    for (var sticker in widget.stickerList) {
-      var imageStream = sticker.imageProvider.resolve(ImageConfiguration.empty);
-      imageStream.addListener(
-          ImageStreamListener((ImageInfo image, bool synchronousCall) {
-        setState(() {
-          drawableStickers.add(_DrawableSticker(sticker, false, image.image));
+    for (var sticker in stickerList) {
+      var drawableSticker = oldStickers[sticker] ?? _DrawableSticker(sticker);
+      oldStickers.remove(sticker);
+      var stickerImageStream =
+          sticker.imageProvider.resolve(ImageConfiguration.empty);
+      if (stickerImageStream.key != drawableSticker.imageStream?.key) {
+        if (drawableSticker.listener != null) {
+          drawableSticker.imageStream
+              ?.removeListener(drawableSticker.listener!);
+        }
+        drawableSticker.imageInfo?.dispose();
+
+        drawableSticker.listener =
+            ImageStreamListener((ImageInfo image, bool synchronousCall) {
+          setState(() {
+            drawableSticker.imageInfo = image;
+          });
         });
-      }));
+
+        drawableSticker.imageStream = stickerImageStream;
+        drawableSticker.imageStream!.addListener(drawableSticker.listener!);
+      }
+      stickerMap[sticker] = drawableSticker;
     }
+    for (var element in oldStickers.values) {
+      element.imageInfo?.dispose();
+    }
+  }
+
+  void _getBackgroundImage() {
+    final ImageStream? oldImageStream = _backgroundImageStream;
+    _backgroundImageStream =
+        widget.backgroundImage.resolve(ImageConfiguration.empty);
+    if (_backgroundImageStream!.key != oldImageStream?.key) {
+      final ImageStreamListener listener =
+          ImageStreamListener(_updateBackgroundImage);
+      oldImageStream?.removeListener(listener);
+      _backgroundImageStream!.addListener(listener);
+    }
+  }
+
+  void _updateBackgroundImage(ImageInfo imageInfo, bool synchronousCall) {
+    setState(() {
+      _backgroundImageInfo?.dispose();
+      _backgroundImageInfo = imageInfo;
+    });
+  }
+
+  @override
+  void didUpdateWidget(ImageStickers oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.backgroundImage != oldWidget.backgroundImage) {
+      _getBackgroundImage();
+    }
+    _getImages(widget.stickerList);
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _backgroundImageStream
+        ?.removeListener(ImageStreamListener(_updateBackgroundImage));
+    _backgroundImageInfo?.dispose();
+    _backgroundImageInfo = null;
+
+    for (var element in stickerMap.values) {
+      element.imageInfo?.dispose();
+    }
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    var stickers = drawableStickers
+    var loadedStickers =
+        stickerMap.values.where((element) => element.imageInfo != null);
+    var editableStickers = loadedStickers
+        .where((element) => element.sticker.editable)
         .map((sticker) => _EditableSticker(
               sticker: sticker,
               onStateChanged: (isDragged) {
@@ -97,14 +157,16 @@ class _ImageStickersState extends State<ImageStickers> {
           builder: (_, constraints) => SizedBox(
             width: constraints.widthConstraints().maxWidth,
             height: constraints.heightConstraints().maxHeight,
-            child: backgroundImage == null
+            child: _backgroundImageInfo == null
                 ? Container()
                 : CustomPaint(
-                    painter: _DropPainter(backgroundImage!, drawableStickers),
+                    painter: _DropPainter(
+                        _backgroundImageInfo!.image,
+                        loadedStickers.toList()),
                   ),
           ),
         ),
-        ...stickers.where((e) => e.sticker.sticker.editable)
+        ...editableStickers
       ],
     );
   }
@@ -141,8 +203,9 @@ class _EditableStickerState extends State<_EditableSticker> {
   @override
   Widget build(BuildContext context) {
     double height = widget.sticker.sticker.size;
-    double width = (widget.sticker.sticker.size / widget.sticker.image.height) *
-        widget.sticker.image.width;
+    double width =
+        (widget.sticker.sticker.size / widget.sticker.imageInfo!.image.height) *
+            widget.sticker.imageInfo!.image.width;
 
     Widget stickerDraggableChild = Transform.rotate(
         angle: widget.sticker.sticker.angle,
@@ -276,15 +339,15 @@ class _DropPainter extends CustomPainter {
       canvas.save();
 
       double height = sticker.sticker.size;
-      double width =
-          (sticker.sticker.size / sticker.image.height) * sticker.image.width;
+      double width = (sticker.sticker.size / sticker.imageInfo!.image.height) *
+          sticker.imageInfo!.image.width;
 
       Paint stickerPaint = Paint();
       stickerPaint.blendMode = sticker.sticker.blendMode;
       stickerPaint.color = Colors.black.withAlpha(240);
 
-      Size inputSize =
-          Size(sticker.image.width.toDouble(), sticker.image.height.toDouble());
+      Size inputSize = Size(sticker.imageInfo!.image.width.toDouble(),
+          sticker.imageInfo!.image.height.toDouble());
 
       FittedSizes fs =
           applyBoxFit(BoxFit.contain, inputSize, Size(width, height));
@@ -296,7 +359,7 @@ class _DropPainter extends CustomPainter {
       canvas.translate(sticker.sticker.x, sticker.sticker.y);
       canvas.rotate(sticker.sticker.angle);
       canvas.translate(-sticker.sticker.x, -sticker.sticker.y);
-      canvas.drawImageRect(sticker.image, src, dst, stickerPaint);
+      canvas.drawImageRect(sticker.imageInfo!.image, src, dst, stickerPaint);
       canvas.restore();
     }
   }
@@ -308,7 +371,9 @@ class _DropPainter extends CustomPainter {
 class _DrawableSticker {
   UISticker sticker;
   bool dragged;
-  ui.Image image;
+  ImageStream? imageStream;
+  ImageInfo? imageInfo;
+  ImageStreamListener? listener;
 
-  _DrawableSticker(this.sticker, this.dragged, this.image);
+  _DrawableSticker(this.sticker, {this.dragged = false});
 }
