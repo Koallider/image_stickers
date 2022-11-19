@@ -51,14 +51,14 @@ class _MyHomePageState extends State<MyHomePage> {
       body: Stack(
         children: [
           ImageStickers(
-            backgroundImage: const AssetImage("assets/weapon.png"),
+            backgroundImage: const AssetImage("assets/car.png"),
             stickerList: stickers,
           ),
           TextButton(onPressed: (){
             setState(() {
               stickers.add(createSticker(stickers.length));
             });
-          }, child: Text("Create sticker"))
+          }, child: const Text("Add sticker"))
         ],
       ), // This trailing comma makes auto-formatting nicer for build methods.
     );

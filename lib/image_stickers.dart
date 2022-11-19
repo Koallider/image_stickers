@@ -6,6 +6,10 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 
+/// Class to describe a sticker
+///
+/// Set [editable] to true if you want to edit this sticker.
+/// [x], [y], [size], [angle] will be updated after edit is finished.
 class UISticker {
   ImageProvider imageProvider;
   double x;
@@ -26,6 +30,9 @@ class UISticker {
       this.editable = false});
 }
 
+/// A widget to draw [backgroundImage] and list of [UISticker]
+///
+/// Takes [ImageProvider] as a background image.
 class ImageStickers extends StatefulWidget {
   final ImageProvider backgroundImage;
   final List<UISticker> stickerList;
@@ -60,6 +67,9 @@ class _ImageStickersState extends State<ImageStickers> {
     _getImages(widget.stickerList);
   }
 
+  /// I want to support BlendMode for images and I draw images in CustomPainter.
+  /// So I resolve all the [ImageProvider] here and update state when image is
+  /// resolved.
   void _getImages(List<UISticker> stickerList) async {
     var oldStickers = stickerMap;
     stickerMap = {};
@@ -112,6 +122,7 @@ class _ImageStickersState extends State<ImageStickers> {
     });
   }
 
+  /// We might need to resolve images again after widget update.
   @override
   void didUpdateWidget(ImageStickers oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -123,7 +134,6 @@ class _ImageStickersState extends State<ImageStickers> {
 
   @override
   void dispose() {
-    super.dispose();
     _backgroundImageStream
         ?.removeListener(ImageStreamListener(_updateBackgroundImage));
     _backgroundImageInfo?.dispose();
@@ -140,7 +150,7 @@ class _ImageStickersState extends State<ImageStickers> {
     var loadedStickers =
         stickerMap.values.where((element) => element.imageInfo != null);
     var editableStickers = loadedStickers
-        .where((element) => element.sticker.editable)
+        .where((element) => element.editable)
         .map((sticker) => _EditableSticker(
               sticker: sticker,
               onStateChanged: (isDragged) {
@@ -161,8 +171,7 @@ class _ImageStickersState extends State<ImageStickers> {
                 ? Container()
                 : CustomPaint(
                     painter: _DropPainter(
-                        _backgroundImageInfo!.image,
-                        loadedStickers.toList()),
+                        _backgroundImageInfo!.image, loadedStickers.toList()),
                   ),
           ),
         ),
@@ -196,24 +205,19 @@ class _EditableStickerState extends State<_EditableSticker> {
   final controlsSize = 30.0;
 
   @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    double height = widget.sticker.sticker.size;
+    double height = widget.sticker.size;
     double width =
-        (widget.sticker.sticker.size / widget.sticker.imageInfo!.image.height) *
+        (widget.sticker.size / widget.sticker.imageInfo!.image.height) *
             widget.sticker.imageInfo!.image.width;
 
     Widget stickerDraggableChild = Transform.rotate(
-        angle: widget.sticker.sticker.angle,
+        angle: widget.sticker.angle,
         child: SizedBox(
           width: width,
           height: height,
           child: Image(
-            image: widget.sticker.sticker.imageProvider,
+            image: widget.sticker.imageProvider,
           ),
         ));
     Widget draggableEmptyWidget = Container(
@@ -223,9 +227,9 @@ class _EditableStickerState extends State<_EditableSticker> {
           border: Border.all(color: Colors.grey.withAlpha(150), width: 1)),
     );
     return Positioned(
-      left: widget.sticker.sticker.x - width / 2 - controlsSize,
-      top: widget.sticker.sticker.y - height / 2 - controlsSize,
-      child: buildStickerControls(
+      left: widget.sticker.x - width / 2 - controlsSize,
+      top: widget.sticker.y - height / 2 - controlsSize,
+      child: _buildStickerControls(
           child: Draggable(
             child: draggableEmptyWidget,
             feedback: stickerDraggableChild,
@@ -233,8 +237,8 @@ class _EditableStickerState extends State<_EditableSticker> {
             onDragEnd: (dragDetails) {
               setState(() {
                 widget.sticker.dragged = false;
-                widget.sticker.sticker.x = dragDetails.offset.dx + width / 2;
-                widget.sticker.sticker.y = dragDetails.offset.dy + height / 2;
+                widget.sticker.x = dragDetails.offset.dx + width / 2;
+                widget.sticker.y = dragDetails.offset.dy + height / 2;
 
                 widget.onStateChanged?.call(false);
               });
@@ -252,10 +256,10 @@ class _EditableStickerState extends State<_EditableSticker> {
     );
   }
 
-  Widget buildStickerControls(
+  Widget _buildStickerControls(
       {required Widget child, required double height, required double width}) {
     return Transform.rotate(
-        angle: widget.sticker.sticker.angle,
+        angle: widget.sticker.angle,
         child: SizedBox(
           width: width + controlsSize * 2,
           height: height + controlsSize * 2,
@@ -270,7 +274,7 @@ class _EditableStickerState extends State<_EditableSticker> {
                     child: Stack(
                       children: [
                         GestureDetector(
-                          child: buildControlsThumb(),
+                          child: _buildControlsThumb(),
                           behavior: HitTestBehavior.translucent,
                           onPanUpdate: onControlPanUpdate,
                         )
@@ -282,7 +286,7 @@ class _EditableStickerState extends State<_EditableSticker> {
         ));
   }
 
-  Widget buildControlsThumb() => Container(
+  Widget _buildControlsThumb() => Container(
         width: controlsSize,
         height: controlsSize,
         decoration: BoxDecoration(
@@ -291,8 +295,7 @@ class _EditableStickerState extends State<_EditableSticker> {
       );
 
   void onControlPanUpdate(DragUpdateDetails details) {
-    Offset centerOfGestureDetector =
-        Offset(widget.sticker.sticker.x, widget.sticker.sticker.y);
+    Offset centerOfGestureDetector = Offset(widget.sticker.x, widget.sticker.y);
     final touchPositionFromCenter =
         details.globalPosition - centerOfGestureDetector;
     setState(() {
@@ -301,8 +304,8 @@ class _EditableStickerState extends State<_EditableSticker> {
               controlsSize) *
           2;
       size = size.clamp(widget.minStickerSize, widget.maxStickerSize);
-      widget.sticker.sticker.size = size;
-      widget.sticker.sticker.angle =
+      widget.sticker.size = size;
+      widget.sticker.angle =
           touchPositionFromCenter.direction - (45 * math.pi / 180);
     });
   }
@@ -338,12 +341,12 @@ class _DropPainter extends CustomPainter {
     if (!sticker.dragged) {
       canvas.save();
 
-      double height = sticker.sticker.size;
-      double width = (sticker.sticker.size / sticker.imageInfo!.image.height) *
+      double height = sticker.size;
+      double width = (sticker.size / sticker.imageInfo!.image.height) *
           sticker.imageInfo!.image.width;
 
       Paint stickerPaint = Paint();
-      stickerPaint.blendMode = sticker.sticker.blendMode;
+      stickerPaint.blendMode = sticker.blendMode;
       stickerPaint.color = Colors.black.withAlpha(240);
 
       Size inputSize = Size(sticker.imageInfo!.image.width.toDouble(),
@@ -352,13 +355,12 @@ class _DropPainter extends CustomPainter {
       FittedSizes fs =
           applyBoxFit(BoxFit.contain, inputSize, Size(width, height));
       Rect src = Offset.zero & fs.source;
-      Rect dst = Offset(
-              sticker.sticker.x - width / 2, sticker.sticker.y - height / 2) &
+      Rect dst = Offset(sticker.x - width / 2, sticker.y - height / 2) &
           fs.destination;
 
-      canvas.translate(sticker.sticker.x, sticker.sticker.y);
-      canvas.rotate(sticker.sticker.angle);
-      canvas.translate(-sticker.sticker.x, -sticker.sticker.y);
+      canvas.translate(sticker.x, sticker.y);
+      canvas.rotate(sticker.angle);
+      canvas.translate(-sticker.x, -sticker.y);
       canvas.drawImageRect(sticker.imageInfo!.image, src, dst, stickerPaint);
       canvas.restore();
     }
@@ -368,12 +370,44 @@ class _DropPainter extends CustomPainter {
   bool shouldRepaint(_DropPainter oldDelegate) => false;
 }
 
+/// A proxy for UISticker to store ImageStream and ImageInfo
+/// after ImageProvider resolve
 class _DrawableSticker {
-  UISticker sticker;
+  final UISticker _sticker;
   bool dragged;
   ImageStream? imageStream;
   ImageInfo? imageInfo;
   ImageStreamListener? listener;
 
-  _DrawableSticker(this.sticker, {this.dragged = false});
+  _DrawableSticker(this._sticker, {this.dragged = false});
+
+  double get x => _sticker.x;
+
+  set x(double x) {
+    _sticker.x = x;
+  }
+
+  double get y => _sticker.y;
+
+  set y(double y) {
+    _sticker.y = y;
+  }
+
+  double get size => _sticker.size;
+
+  set size(double size) {
+    _sticker.size = size;
+  }
+
+  double get angle => _sticker.angle;
+
+  set angle(double angle) {
+    _sticker.angle = angle;
+  }
+
+  bool get editable => _sticker.editable;
+
+  BlendMode get blendMode => _sticker.blendMode;
+
+  ImageProvider get imageProvider => _sticker.imageProvider;
 }
