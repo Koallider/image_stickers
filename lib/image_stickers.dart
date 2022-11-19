@@ -205,11 +205,6 @@ class _EditableStickerState extends State<_EditableSticker> {
   final controlsSize = 30.0;
 
   @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
   Widget build(BuildContext context) {
     double height = widget.sticker.size;
     double width =

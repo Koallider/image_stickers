@@ -1,12 +1,16 @@
 ## Flutter Package to apply stickers to image.
 
+![Demo](https://raw.githubusercontent.com/Koallider/image_stickers/development/doc/demo.gif)
+
+Try [Demo](https://koallider.github.io/image_stickers/).
+
 ## Getting Started
 ### Installation
 
 ```yaml
 dependencies:
   ...
-  image_stickers: 0.0.1
+  image_stickers: 0.0.2
 ```
 
 ### Usage
