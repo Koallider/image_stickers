@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:image_stickers/image_stickers.dart';
+import 'package:image_stickers/image_stickers_controls_style.dart';
 
 void main() {
   runApp(const MyApp());
@@ -29,7 +30,6 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-
   List<UISticker> stickers = [];
 
   @override
@@ -37,7 +37,7 @@ class _MyHomePageState extends State<MyHomePage> {
     stickers.add(createSticker(0));
   }
 
-  UISticker createSticker(int index){
+  UISticker createSticker(int index) {
     return UISticker(
         imageProvider: const AssetImage("assets/sticker.png"),
         x: 100 + 100.0 * index,
@@ -53,12 +53,18 @@ class _MyHomePageState extends State<MyHomePage> {
           ImageStickers(
             backgroundImage: const AssetImage("assets/car.png"),
             stickerList: stickers,
+            stickerControlsStyle: ImageStickersControlsStyle(
+              color: Colors.blueGrey,
+              child: const Icon(Icons.edit, color: Colors.white,)
+            ),
           ),
-          TextButton(onPressed: (){
-            setState(() {
-              stickers.add(createSticker(stickers.length));
-            });
-          }, child: const Text("Add sticker"))
+          TextButton(
+              onPressed: () {
+                setState(() {
+                  stickers.add(createSticker(stickers.length));
+                });
+              },
+              child: const Text("Add sticker"))
         ],
       ), // This trailing comma makes auto-formatting nicer for build methods.
     );
