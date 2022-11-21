@@ -5,6 +5,7 @@ import 'dart:math' as math;
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:image_stickers/image_stickers_controls_style.dart';
 
 /// Class to describe a sticker
 ///
@@ -40,11 +41,14 @@ class ImageStickers extends StatefulWidget {
   final double minStickerSize;
   final double maxStickerSize;
 
+  final ImageStickersControlsStyle? stickerControlsStyle;
+
   const ImageStickers(
       {required this.backgroundImage,
       required this.stickerList,
       this.minStickerSize = 50.0,
       this.maxStickerSize = 200.0,
+      this.stickerControlsStyle,
       Key? key})
       : super(key: key);
 
@@ -158,6 +162,7 @@ class _ImageStickersState extends State<ImageStickers> {
               },
               maxStickerSize: widget.maxStickerSize,
               minStickerSize: widget.minStickerSize,
+              stickerControlsStyle: widget.stickerControlsStyle,
             ))
         .toList();
 
@@ -187,11 +192,14 @@ class _EditableSticker extends StatefulWidget {
   final double minStickerSize;
   final double maxStickerSize;
 
+  final ImageStickersControlsStyle? stickerControlsStyle;
+
   const _EditableSticker(
       {required this.sticker,
       required this.minStickerSize,
       required this.maxStickerSize,
       this.onStateChanged,
+      this.stickerControlsStyle,
       Key? key})
       : super(key: key);
 
@@ -202,7 +210,13 @@ class _EditableSticker extends StatefulWidget {
 }
 
 class _EditableStickerState extends State<_EditableSticker> {
-  final controlsSize = 30.0;
+  late ImageStickersControlsStyle controlsStyle;
+
+  @override
+  void initState() {
+    super.initState();
+    controlsStyle = widget.stickerControlsStyle ?? ImageStickersControlsStyle();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -227,8 +241,8 @@ class _EditableStickerState extends State<_EditableSticker> {
           border: Border.all(color: Colors.grey.withAlpha(150), width: 1)),
     );
     return Positioned(
-      left: widget.sticker.x - width / 2 - controlsSize,
-      top: widget.sticker.y - height / 2 - controlsSize,
+      left: widget.sticker.x - width / 2 - controlsStyle.size,
+      top: widget.sticker.y - height / 2 - controlsStyle.size,
       child: _buildStickerControls(
           child: Draggable(
             child: draggableEmptyWidget,
@@ -261,8 +275,8 @@ class _EditableStickerState extends State<_EditableSticker> {
     return Transform.rotate(
         angle: widget.sticker.angle,
         child: SizedBox(
-          width: width + controlsSize * 2,
-          height: height + controlsSize * 2,
+          width: width + controlsStyle.size * 2,
+          height: height + controlsStyle.size * 2,
           child: Stack(
             alignment: Alignment.center,
             children: [
@@ -287,11 +301,13 @@ class _EditableStickerState extends State<_EditableSticker> {
   }
 
   Widget _buildControlsThumb() => Container(
-        width: controlsSize,
-        height: controlsSize,
+        width: controlsStyle.size,
+        height: controlsStyle.size,
         decoration: BoxDecoration(
-            color: Colors.blue,
-            borderRadius: BorderRadius.circular(controlsSize / 2)),
+            color: controlsStyle.color,
+            borderRadius: controlsStyle.borderRadius ??
+                BorderRadius.circular(controlsStyle.size / 2)),
+        child: controlsStyle.child ?? Container(),
       );
 
   void onControlPanUpdate(DragUpdateDetails details) {
@@ -301,8 +317,7 @@ class _EditableStickerState extends State<_EditableSticker> {
     setState(() {
       var size = (math.max(touchPositionFromCenter.dx.abs(),
                   touchPositionFromCenter.dy.abs()) -
-              controlsSize) *
-          2;
+              controlsStyle.size) * 2;
       size = size.clamp(widget.minStickerSize, widget.maxStickerSize);
       widget.sticker.size = size;
       widget.sticker.angle =
