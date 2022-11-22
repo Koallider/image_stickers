@@ -55,7 +55,7 @@ class _MyHomePageState extends State<MyHomePage> {
             stickerList: stickers,
             stickerControlsStyle: ImageStickersControlsStyle(
               color: Colors.blueGrey,
-              child: const Icon(Icons.edit, color: Colors.white,)
+              child: const Icon(Icons.zoom_out_map, color: Colors.white,)
             ),
           ),
           TextButton(

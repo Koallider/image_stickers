@@ -38,9 +38,13 @@ class ImageStickers extends StatefulWidget {
   final ImageProvider backgroundImage;
   final List<UISticker> stickerList;
 
+  /// Minimal size sticker can be resized to by using edit controls.
   final double minStickerSize;
+
+  /// Maximal size sticker can be resized to by using edit controls.
   final double maxStickerSize;
 
+  /// Set style to change controls thumb appearance.
   final ImageStickersControlsStyle? stickerControlsStyle;
 
   const ImageStickers(
@@ -317,7 +321,8 @@ class _EditableStickerState extends State<_EditableSticker> {
     setState(() {
       var size = (math.max(touchPositionFromCenter.dx.abs(),
                   touchPositionFromCenter.dy.abs()) -
-              controlsStyle.size) * 2;
+              controlsStyle.size) *
+          2;
       size = size.clamp(widget.minStickerSize, widget.maxStickerSize);
       widget.sticker.size = size;
       widget.sticker.angle =
