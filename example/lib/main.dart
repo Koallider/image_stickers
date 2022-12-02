@@ -48,24 +48,35 @@ class _MyHomePageState extends State<MyHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        children: [
-          ImageStickers(
-            backgroundImage: const AssetImage("assets/car.png"),
-            stickerList: stickers,
-            stickerControlsStyle: ImageStickersControlsStyle(
-              color: Colors.blueGrey,
-              child: const Icon(Icons.zoom_out_map, color: Colors.white,)
+      body: SafeArea(
+        child: Column(
+          children: [
+            Row(
+              children: [
+                TextButton(
+                    onPressed: () {
+                      setState(() {
+                        stickers.add(createSticker(stickers.length));
+                      });
+                    },
+                    child: const Text("Add sticker")),
+              ],
             ),
-          ),
-          TextButton(
-              onPressed: () {
-                setState(() {
-                  stickers.add(createSticker(stickers.length));
-                });
-              },
-              child: const Text("Add sticker"))
-        ],
+            Expanded(flex: 7, child: Container(
+              child: ImageStickers(
+                backgroundImage: const AssetImage("assets/car.png"),
+                stickerList: stickers,
+                stickerControlsStyle: ImageStickersControlsStyle(
+                    color: Colors.blueGrey,
+                    child: const Icon(
+                      Icons.zoom_out_map,
+                      color: Colors.white,
+                    )),
+              ),
+            )),
+            Expanded(flex: 3, child: Container())
+          ],
+        ),
       ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
