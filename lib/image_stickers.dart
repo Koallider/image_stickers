@@ -47,12 +47,15 @@ class ImageStickers extends StatefulWidget {
   /// Set style to change controls thumb appearance.
   final ImageStickersControlsStyle? stickerControlsStyle;
 
+  final ImageStickersController? controller;
+
   const ImageStickers(
       {required this.backgroundImage,
       required this.stickerList,
       this.minStickerSize = 50.0,
       this.maxStickerSize = 200.0,
       this.stickerControlsStyle,
+      this.controller,
       Key? key})
       : super(key: key);
 
@@ -170,18 +173,31 @@ class _ImageStickersState extends State<ImageStickers> {
             ))
         .toList();
 
+    Widget customPaint;
+    if (_backgroundImageInfo == null) {
+      customPaint = Container();
+    } else {
+      var painter =
+          _DropPainter(_backgroundImageInfo!.image, loadedStickers.toList());
+      widget.controller?._customPainter = painter;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        widget.controller?._size = Size(
+          context.size!.width,
+          context.size!.height,
+        );
+      });
+      customPaint = CustomPaint(
+        painter: painter,
+      );
+    }
+
     return Stack(
       children: [
         LayoutBuilder(
           builder: (_, constraints) => SizedBox(
             width: constraints.widthConstraints().maxWidth,
             height: constraints.heightConstraints().maxHeight,
-            child: _backgroundImageInfo == null
-                ? Container()
-                : CustomPaint(
-                    painter: _DropPainter(
-                        _backgroundImageInfo!.image, loadedStickers.toList()),
-                  ),
+            child: customPaint,
           ),
         ),
         ...editableStickers
@@ -430,4 +446,21 @@ class _DrawableSticker {
   BlendMode get blendMode => _sticker.blendMode;
 
   ImageProvider get imageProvider => _sticker.imageProvider;
+}
+
+class ImageStickersController extends ChangeNotifier {
+  Size? _size;
+  CustomPainter? _customPainter;
+
+  Future<ui.Image> getImage() {
+    ui.PictureRecorder recorder = ui.PictureRecorder();
+    Canvas canvas = Canvas(recorder);
+    if (_size == null || _customPainter == null) {
+      throw StateError("Controller is not attached to a widget");
+    }
+    _customPainter!.paint(canvas, _size!);
+    return recorder
+        .endRecording()
+        .toImage(_size!.width.toInt(), _size!.height.toInt());
+  }
 }
