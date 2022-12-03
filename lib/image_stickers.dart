@@ -18,6 +18,7 @@ class UISticker {
   double size;
   double angle;
   BlendMode blendMode;
+  double opacity;
 
   bool editable = false;
 
@@ -27,6 +28,7 @@ class UISticker {
       required this.y,
       this.size = 100,
       this.angle = 0.0,
+      this.opacity = 1.0,
       this.blendMode = BlendMode.srcATop,
       this.editable = false});
 }
@@ -399,7 +401,8 @@ class _DropPainter extends CustomPainter {
 
       Paint stickerPaint = Paint();
       stickerPaint.blendMode = sticker.blendMode;
-      stickerPaint.color = Colors.black.withAlpha(240);
+      stickerPaint.color =
+          Colors.black.withAlpha((255 * sticker.opacity).toInt());
 
       Size inputSize = Size(sticker.imageInfo!.image.width.toDouble(),
           sticker.imageInfo!.image.height.toDouble());
@@ -443,6 +446,12 @@ class _DrawableSticker {
 
   set y(double y) {
     _sticker.y = y;
+  }
+
+  double get opacity => _sticker.opacity;
+
+  set opacity(double opacity) {
+    _sticker.opacity = opacity;
   }
 
   double get size => _sticker.size;

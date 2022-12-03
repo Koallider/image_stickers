@@ -1,3 +1,8 @@
+## 0.0.4
+
+- Fixed bug with drag and drop offset
+- Added opacity parameter to stickers
+
 ## 0.0.3
 
 - Added parameter to set controls style
