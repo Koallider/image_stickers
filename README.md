@@ -10,7 +10,7 @@ Try [Demo](https://koallider.github.io/image_stickers/).
 ```yaml
 dependencies:
   ...
-  image_stickers: 0.0.3
+  image_stickers: 0.0.4
 ```
 
 ### Usage
