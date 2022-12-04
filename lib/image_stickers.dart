@@ -18,6 +18,7 @@ class UISticker {
   double size;
   double angle;
   BlendMode blendMode;
+  double opacity;
 
   bool editable = false;
 
@@ -27,6 +28,7 @@ class UISticker {
       required this.y,
       this.size = 100,
       this.angle = 0.0,
+      this.opacity = 1.0,
       this.blendMode = BlendMode.srcATop,
       this.editable = false});
 }
@@ -66,16 +68,30 @@ class ImageStickers extends StatefulWidget {
 }
 
 class _ImageStickersState extends State<ImageStickers> {
+  final GlobalKey _key = GlobalKey();
   ImageStream? _backgroundImageStream;
   ImageInfo? _backgroundImageInfo;
 
   Map<UISticker, _DrawableSticker> stickerMap = {};
+
+  late _EditableStickerController stickerController;
 
   @override
   void initState() {
     super.initState();
     _getBackgroundImage();
     _getImages(widget.stickerList);
+    stickerController = _EditableStickerController();
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) => getOffset());
+  }
+
+  void getOffset() {
+    final RenderObject? renderBoxWidget =
+        _key.currentContext?.findRenderObject();
+    if (renderBoxWidget != null) {
+      stickerController.parentOffset =
+          (renderBoxWidget as RenderBox).localToGlobal(Offset.zero);
+    }
   }
 
   /// I want to support BlendMode for images and I draw images in CustomPainter.
@@ -170,6 +186,7 @@ class _ImageStickersState extends State<ImageStickers> {
               maxStickerSize: widget.maxStickerSize,
               minStickerSize: widget.minStickerSize,
               stickerControlsStyle: widget.stickerControlsStyle,
+              controller: stickerController,
             ))
         .toList();
 
@@ -192,6 +209,7 @@ class _ImageStickersState extends State<ImageStickers> {
     }
 
     return Stack(
+      key: _key,
       children: [
         LayoutBuilder(
           builder: (_, constraints) => SizedBox(
@@ -206,11 +224,23 @@ class _ImageStickersState extends State<ImageStickers> {
   }
 }
 
+class _EditableStickerController extends ChangeNotifier {
+  Offset? _parentOffset;
+
+  set parentOffset(Offset? offset) {
+    _parentOffset = offset;
+    notifyListeners();
+  }
+
+  Offset? get parentOffset => _parentOffset;
+}
+
 class _EditableSticker extends StatefulWidget {
   final _DrawableSticker sticker;
   final Function(bool isDragged)? onStateChanged;
   final double minStickerSize;
   final double maxStickerSize;
+  final _EditableStickerController? controller;
 
   final ImageStickersControlsStyle? stickerControlsStyle;
 
@@ -220,6 +250,7 @@ class _EditableSticker extends StatefulWidget {
       required this.maxStickerSize,
       this.onStateChanged,
       this.stickerControlsStyle,
+      this.controller,
       Key? key})
       : super(key: key);
 
@@ -271,8 +302,11 @@ class _EditableStickerState extends State<_EditableSticker> {
             onDragEnd: (dragDetails) {
               setState(() {
                 widget.sticker.dragged = false;
-                widget.sticker.x = dragDetails.offset.dx + width / 2;
-                widget.sticker.y = dragDetails.offset.dy + height / 2;
+                var parentDx = widget.controller?.parentOffset?.dx ?? 0;
+                var parentDy = widget.controller?.parentOffset?.dy ?? 0;
+                widget.sticker.x = dragDetails.offset.dx + width / 2 - parentDx;
+                widget.sticker.y =
+                    dragDetails.offset.dy + height / 2 - parentDy;
 
                 widget.onStateChanged?.call(false);
               });
@@ -383,7 +417,8 @@ class _DropPainter extends CustomPainter {
 
       Paint stickerPaint = Paint();
       stickerPaint.blendMode = sticker.blendMode;
-      stickerPaint.color = Colors.black.withAlpha(240);
+      stickerPaint.color =
+          Colors.black.withAlpha((255 * sticker.opacity).toInt());
 
       Size inputSize = Size(sticker.imageInfo!.image.width.toDouble(),
           sticker.imageInfo!.image.height.toDouble());
@@ -427,6 +462,12 @@ class _DrawableSticker {
 
   set y(double y) {
     _sticker.y = y;
+  }
+
+  double get opacity => _sticker.opacity;
+
+  set opacity(double opacity) {
+    _sticker.opacity = opacity;
   }
 
   double get size => _sticker.size;
