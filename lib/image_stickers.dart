@@ -461,12 +461,12 @@ class _DropPainter extends CustomPainter {
 /// after ImageProvider resolve
 class _DrawableSticker {
   final UISticker _sticker;
-  bool dragged;
+  bool dragged = false;
   ImageStream? imageStream;
   ImageInfo? imageInfo;
   ImageStreamListener? listener;
 
-  _DrawableSticker(this._sticker, {this.dragged = false});
+  _DrawableSticker(this._sticker);
 
   double get x => _sticker.x;
 
