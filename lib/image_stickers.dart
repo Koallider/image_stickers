@@ -2,6 +2,7 @@ library image_stickers;
 
 import 'dart:core';
 import 'dart:math' as math;
+import 'dart:math';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -49,12 +50,15 @@ class ImageStickers extends StatefulWidget {
   /// Set style to change controls thumb appearance.
   final ImageStickersControlsStyle? stickerControlsStyle;
 
+  final ImageStickersController? controller;
+
   const ImageStickers(
       {required this.backgroundImage,
       required this.stickerList,
       this.minStickerSize = 50.0,
       this.maxStickerSize = 200.0,
       this.stickerControlsStyle,
+      this.controller,
       Key? key})
       : super(key: key);
 
@@ -187,6 +191,24 @@ class _ImageStickersState extends State<ImageStickers> {
             ))
         .toList();
 
+    Widget customPaint;
+    if (_backgroundImageInfo == null) {
+      customPaint = Container();
+    } else {
+      var painter =
+          _DropPainter(_backgroundImageInfo!.image, loadedStickers.toList());
+      widget.controller?._customPainter = painter;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        widget.controller?._size = Size(
+          context.size!.width,
+          context.size!.height,
+        );
+      });
+      customPaint = CustomPaint(
+        painter: painter,
+      );
+    }
+
     return Stack(
       key: _key,
       children: [
@@ -194,12 +216,7 @@ class _ImageStickersState extends State<ImageStickers> {
           builder: (_, constraints) => SizedBox(
             width: constraints.widthConstraints().maxWidth,
             height: constraints.heightConstraints().maxHeight,
-            child: _backgroundImageInfo == null
-                ? Container()
-                : CustomPaint(
-                    painter: _DropPainter(
-                        _backgroundImageInfo!.image, loadedStickers.toList()),
-                  ),
+            child: customPaint,
           ),
         ),
         ...editableStickers
@@ -283,6 +300,21 @@ class _EditableStickerState extends State<_EditableSticker> {
             child: draggableEmptyWidget,
             feedback: stickerDraggableChild,
             childWhenDragging: Container(),
+            dragAnchorStrategy: (draggable, context, position){
+              final RenderBox renderObject = context.findRenderObject()! as RenderBox;
+              var local =  renderObject.globalToLocal(position);
+
+              var x = local.dx - width / 2;
+              var y = local.dy - height / 2;
+
+              var dx = x * cos(widget.sticker.angle) - y * sin(widget.sticker.angle);
+              var dy = x * sin(widget.sticker.angle) + y * cos(widget.sticker.angle);
+
+              dx = dx + width / 2;
+              dy = dy + height / 2;
+
+              return Offset(dx, dy);
+            },
             onDragEnd: (dragDetails) {
               setState(() {
                 widget.sticker.dragged = false;
@@ -471,4 +503,21 @@ class _DrawableSticker {
   BlendMode get blendMode => _sticker.blendMode;
 
   ImageProvider get imageProvider => _sticker.imageProvider;
+}
+
+class ImageStickersController extends ChangeNotifier {
+  Size? _size;
+  CustomPainter? _customPainter;
+
+  Future<ui.Image> getImage() {
+    ui.PictureRecorder recorder = ui.PictureRecorder();
+    Canvas canvas = Canvas(recorder);
+    if (_size == null || _customPainter == null) {
+      throw StateError("Controller is not attached to a widget");
+    }
+    _customPainter!.paint(canvas, _size!);
+    return recorder
+        .endRecording()
+        .toImage(_size!.width.toInt(), _size!.height.toInt());
+  }
 }

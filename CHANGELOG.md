@@ -1,3 +1,7 @@
+## 0.0.5
+
+- Fixed incorrect Draggable anchor coordinates if sticker was rotated
+
 ## 0.0.4
 
 - Fixed bug with drag and drop offset
