@@ -2,6 +2,7 @@ library image_stickers;
 
 import 'dart:core';
 import 'dart:math' as math;
+import 'dart:math';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -299,6 +300,21 @@ class _EditableStickerState extends State<_EditableSticker> {
             child: draggableEmptyWidget,
             feedback: stickerDraggableChild,
             childWhenDragging: Container(),
+            dragAnchorStrategy: (draggable, context, position){
+              final RenderBox renderObject = context.findRenderObject()! as RenderBox;
+              var local =  renderObject.globalToLocal(position);
+
+              var x = local.dx - width / 2;
+              var y = local.dy - height / 2;
+
+              var dx = x * cos(widget.sticker.angle) - y * sin(widget.sticker.angle);
+              var dy = x * sin(widget.sticker.angle) + y * cos(widget.sticker.angle);
+
+              dx = dx + width / 2;
+              dy = dy + height / 2;
+
+              return Offset(dx, dy);
+            },
             onDragEnd: (dragDetails) {
               setState(() {
                 widget.sticker.dragged = false;
