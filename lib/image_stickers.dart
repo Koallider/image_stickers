@@ -8,6 +8,21 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:image_stickers/image_stickers_controls_style.dart';
 
+/// Enum to set behaviour of controls for stickers
+enum StickerControlsBehaviour {
+  /// Controls are always shown.
+  alwaysShow,
+
+  /// Show controls on tap on sticker. By default controls are hidden.
+  showOnTap,
+
+  /// Hide controls on tap on sticker. By default controls are shown.
+  hideOnTap,
+
+  /// Controls are always hidden.
+  alwaysHide,
+}
+
 /// Class to describe a sticker
 ///
 /// Set [editable] to true if you want to edit this sticker.
@@ -50,6 +65,8 @@ class ImageStickers extends StatefulWidget {
   /// Set style to change controls thumb appearance.
   final ImageStickersControlsStyle? stickerControlsStyle;
 
+  final StickerControlsBehaviour stickerControlsBehaviour;
+
   final ImageStickersController? controller;
 
   const ImageStickers(
@@ -58,6 +75,7 @@ class ImageStickers extends StatefulWidget {
       this.minStickerSize = 50.0,
       this.maxStickerSize = 200.0,
       this.stickerControlsStyle,
+      this.stickerControlsBehaviour = StickerControlsBehaviour.alwaysShow,
       this.controller,
       Key? key})
       : super(key: key);
@@ -188,6 +206,7 @@ class _ImageStickersState extends State<ImageStickers> {
               minStickerSize: widget.minStickerSize,
               stickerControlsStyle: widget.stickerControlsStyle,
               controller: stickerController,
+              stickerControlsBehaviour: widget.stickerControlsBehaviour,
             ))
         .toList();
 
@@ -244,11 +263,13 @@ class _EditableSticker extends StatefulWidget {
   final _EditableStickerController? controller;
 
   final ImageStickersControlsStyle? stickerControlsStyle;
+  final StickerControlsBehaviour stickerControlsBehaviour;
 
   const _EditableSticker(
       {required this.sticker,
       required this.minStickerSize,
       required this.maxStickerSize,
+      required this.stickerControlsBehaviour,
       this.onStateChanged,
       this.stickerControlsStyle,
       this.controller,
@@ -264,10 +285,15 @@ class _EditableSticker extends StatefulWidget {
 class _EditableStickerState extends State<_EditableSticker> {
   late ImageStickersControlsStyle controlsStyle;
 
+  late bool showControls;
+
   @override
   void initState() {
     super.initState();
     controlsStyle = widget.stickerControlsStyle ?? ImageStickersControlsStyle();
+    showControls =
+        widget.stickerControlsBehaviour == StickerControlsBehaviour.alwaysShow ||
+            widget.stickerControlsBehaviour == StickerControlsBehaviour.hideOnTap;
   }
 
   @override
@@ -300,15 +326,18 @@ class _EditableStickerState extends State<_EditableSticker> {
             child: draggableEmptyWidget,
             feedback: stickerDraggableChild,
             childWhenDragging: Container(),
-            dragAnchorStrategy: (draggable, context, position){
-              final RenderBox renderObject = context.findRenderObject()! as RenderBox;
-              var local =  renderObject.globalToLocal(position);
+            dragAnchorStrategy: (draggable, context, position) {
+              final RenderBox renderObject =
+                  context.findRenderObject()! as RenderBox;
+              var local = renderObject.globalToLocal(position);
 
               var x = local.dx - width / 2;
               var y = local.dy - height / 2;
 
-              var dx = x * cos(widget.sticker.angle) - y * sin(widget.sticker.angle);
-              var dy = x * sin(widget.sticker.angle) + y * cos(widget.sticker.angle);
+              var dx =
+                  x * cos(widget.sticker.angle) - y * sin(widget.sticker.angle);
+              var dy =
+                  x * sin(widget.sticker.angle) + y * cos(widget.sticker.angle);
 
               dx = dx + width / 2;
               dy = dy + height / 2;
@@ -350,9 +379,20 @@ class _EditableStickerState extends State<_EditableSticker> {
           child: Stack(
             alignment: Alignment.center,
             children: [
-              child,
+              GestureDetector(
+                  onTap: () {
+                    if (widget.stickerControlsBehaviour ==
+                            StickerControlsBehaviour.showOnTap ||
+                        widget.stickerControlsBehaviour ==
+                            StickerControlsBehaviour.hideOnTap) {
+                      setState(() {
+                        showControls = !showControls;
+                      });
+                    }
+                  },
+                  child: child),
               Visibility(
-                  visible: !widget.sticker.dragged,
+                  visible: areControlsVisible(),
                   child: Container(
                     alignment: Alignment.bottomRight,
                     child: Stack(
@@ -368,6 +408,10 @@ class _EditableStickerState extends State<_EditableSticker> {
             ],
           ),
         ));
+  }
+
+  bool areControlsVisible() {
+    return showControls && !widget.sticker.dragged;
   }
 
   Widget _buildControlsThumb() => Container(

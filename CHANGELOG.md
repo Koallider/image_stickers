@@ -1,3 +1,7 @@
+## 0.0.6
+
+- Added sticker controls behavior parameter. Now it is possible to hide controls on click.
+
 ## 0.0.5
 
 - Fixed incorrect Draggable anchor coordinates if sticker was rotated

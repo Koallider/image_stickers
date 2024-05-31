@@ -83,18 +83,17 @@ class _MyHomePageState extends State<MyHomePage> {
           ),
           Expanded(
               flex: 7,
-              child: Container(
-                child: ImageStickers(
-                  backgroundImage: const AssetImage("assets/car.png"),
-                  stickerList: stickers,
-                  stickerControlsStyle: ImageStickersControlsStyle(
-                      color: Colors.blueGrey,
-                      child: const Icon(
-                        Icons.zoom_out_map,
-                        color: Colors.white,
-                      )),
-                  controller: controller,
-                ),
+              child: ImageStickers(
+                backgroundImage: const AssetImage("assets/car.png"),
+                stickerList: stickers,
+                stickerControlsStyle: ImageStickersControlsStyle(
+                    color: Colors.blueGrey,
+                    child: const Icon(
+                      Icons.zoom_out_map,
+                      color: Colors.white,
+                    )),
+                controller: controller,
+                stickerControlsBehaviour: StickerControlsBehaviour.alwaysShow,
               )),
           Expanded(
               flex: 3,
