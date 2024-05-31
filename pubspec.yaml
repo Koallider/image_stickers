@@ -1,6 +1,6 @@
 name: image_stickers
 description: Plugin to apply image stickers to the background image. Drag, resize, rotate stickers.
-version: 0.0.5
+version: 0.0.6
 homepage: https://github.com/Koallider/image_stickers
 
 environment:

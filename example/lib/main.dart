@@ -93,6 +93,7 @@ class _MyHomePageState extends State<MyHomePage> {
                       color: Colors.white,
                     )),
                 controller: controller,
+                stickerControlsBehaviour: StickerControlsBehaviour.alwaysShow,
               )),
           Expanded(
               flex: 3,
